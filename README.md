@@ -1,3 +1,4 @@
+
 # RoadAccidentsMgmt
 
 ##Setting up environment
@@ -22,7 +23,7 @@ When you finished required code locally, push it to your repository on github an
 
 In pull request mark your mentor (@mentorName) so it can review it. 
 
-
+#
 ## Hometask 1
 
 To complite task one you need to fix DataProcessorTest unit tests. 
@@ -54,3 +55,30 @@ Feel free to cover both your own code or code provided to you as a part of home 
   * provide at least one stub with when()
   * verify() behavior at least once
 4. Write at least one integration test, without mocking (hint: you may consider testing file writing functionality)
+
+#HomeTask 4:
+Sample Code Base: https://github.com/grephari/JMP2
+
+Scenarios to be implemented for Homework:
+
+1. Find all the accidents by ID(Note: We can use findOne method which will accept the Accident ID as PK).
+2. Find all the accidents count groupby all roadsurface conditions .
+3. Find all the accidents count groupby accident year and weather condition .( For eg: in year 2009 we need to know the number of accidents based on each weather condition).
+4. On a given date,  fetch all the accidents and update the Time based on the below rules
+Time Logic: 
+MORNING - 6 am to 12 pm
+AFTERNOON - 12 pm to 6 pm
+EVENING - 6 pm to 12 am
+NIGHT - 12 am to 6 am
+
+    
+Recommendations:
+
+1. For above scenarios, you can use either Spring JDBC/ORM  or use Spring Data as we discussed in the session.​
+2. Use DI (either setter/constructor) for some dependencies.
+3. For repositories use Autowiring either declarative or Annotation approach.
+4. Please write the entities for all the tables required with all the associations using JPA annotations.
+5. DB related properties will be defined in persistence.xml
+6. JPA will be configured in spring config file which inturn will search for persistence.xml under META-INF/persistence.xml.
+
+
