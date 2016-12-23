@@ -81,4 +81,8 @@ Recommendations:
 5. DB related properties will be defined in persistence.xml
 6. JPA will be configured in spring config file which inturn will search for persistence.xml under META-INF/persistence.xml.
 
+# HomeTask 5:
 
+convert your previous project base on springboot.
+
+Sample Code Base: https://github.com/java-mentoring-program-2/SpringBootDemo
