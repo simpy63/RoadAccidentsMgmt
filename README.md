@@ -86,3 +86,14 @@ Recommendations:
 convert your previous project base on springboot.
 
 Sample Code Base: https://github.com/java-mentoring-program-2/SpringBootDemo
+
+# HomeTask 6:
+
+Create a Java Web Application for Accident management
+Tasks:
+1. Integrate your existing Accident Service layer into the web-app
+2. Create a view that will list some accidents
+3. Create a view that will allow adding/editing of accidents
+4. Secure the application, so that the list of accidents should be accessible only for authenticated users, while editing should be permitted only to admins.
+
+Sample Code Base: https://github.com/adancu/jamp2-webapp
