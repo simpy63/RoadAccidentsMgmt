@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
 
 /**
  * Created by Tanmoy on 6/17/2016.
@@ -29,12 +30,15 @@ public class AccidentDataProcessor {
 
     private Logger log = LoggerFactory.getLogger(AccidentDataProcessor.class);
 
+    BlockingQueue<List<RoadAccident>> roadAccidentQ = new ArrayBlockingQueue<>(3);
+    BlockingQueue<List<RoadAccidentDetails>> roadAccidentDetailsQ = new ArrayBlockingQueue<>(3);
+    private volatile boolean processing = true;
 
     public void init(){
         fileQueue.add(FILE_PATH_1);
-        //fileQueue.add(FILE_PATH_2);
-        //fileQueue.add(FILE_PATH_3);
-        //fileQueue.add(FILE_PATH_4);
+        fileQueue.add(FILE_PATH_2);
+        fileQueue.add(FILE_PATH_3);
+        fileQueue.add(FILE_PATH_4);
 
         accidentDataWriter.init(OUTPUT_FILE_PATH);
     }
@@ -48,14 +52,67 @@ public class AccidentDataProcessor {
     }
 
     private void processFile(){
-        int batchCount = 1;
-        while (!accidentDataReader.hasFinished()){
-            List<RoadAccident> roadAccidents = accidentDataReader.getNextBatch();
-            log.info("Read [{}] records in batch [{}]", roadAccidents.size(), batchCount++);
-            List<RoadAccidentDetails> roadAccidentDetailsList = accidentDataEnricher.enrichRoadAccidentData(roadAccidents);
-            log.info("Enriched records");
-            accidentDataWriter.writeAccidentData(roadAccidentDetailsList);
-            log.info("Written records");
+        ExecutorService executor = Executors.newFixedThreadPool(3);
+        FutureTask<RoadAccident> readerTask = new FutureTask<RoadAccident>(new Runnable() {
+            @Override
+            public void run() {
+                int batchCount = 1;
+                while (!accidentDataReader.hasFinished()) {
+                    try {
+                        List<RoadAccident> roadAccidents = accidentDataReader.getNextBatch();
+                        roadAccidentQ.put(roadAccidents);
+                        log.info("Read [{}] records in batch [{}]", roadAccidents.size(), batchCount);
+                    } catch (InterruptedException e) {
+                        processing = false;
+                    }
+                }
+            }
+        }, null);
+        executor.execute(readerTask);
+
+        FutureTask<RoadAccidentDetails> enrichTask = new FutureTask<RoadAccidentDetails>(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    while (processing) {
+                        List<RoadAccidentDetails> roadAccidentDetailsList = accidentDataEnricher.enrichRoadAccidentData(roadAccidentQ.take());
+                        roadAccidentDetailsQ.put(roadAccidentDetailsList);
+                        log.info("Enriched records");
+                    }
+                } catch (InterruptedException e) {
+                    processing = false;
+                }
+
+            }
+        }, null);
+        executor.execute(enrichTask);
+
+        FutureTask<RoadAccidentDetails> writerTask = new FutureTask<RoadAccidentDetails>(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    while (processing) {
+                        accidentDataWriter.writeAccidentData(roadAccidentDetailsQ.take());
+                        log.info("Written records");
+                    }
+                } catch (InterruptedException e) {
+                    processing = false;
+                }
+            }
+        }, null);
+        executor.execute(writerTask);
+
+        try {
+            if(readerTask.get() != null || !processing){
+                readerTask.cancel(true);
+                enrichTask.cancel(true);
+                writerTask.cancel(true);
+                executor.shutdownNow();
+            }
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
     }
 
